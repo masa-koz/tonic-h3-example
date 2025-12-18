@@ -1,0 +1,22 @@
+[package]
+name = "tonic-h3-example"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tonic = { version = "0.14", default-features = false, features = ["router", "codegen", "transport"] }
+tonic-prost = "0.14"
+prost = "0.14"
+tokio = { version = "1.42.0", features = ["rt", "rt-multi-thread", "time", "macros", "sync"] }
+tokio-macros = { version = "0.2.0-alpha.6" }
+tokio-util = "0.7"
+anyhow = "1"
+http = "1"
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3", features = ["fmt", "ansi", "env-filter", "time", "tracing-log"] }
+tempfile = "3.10.1"
+tonic-h3 = { path = "../tonic-h3/tonic-h3" , default-features = false, features = ["msquic-async"] }
+msquic = { version = "2.5.1-beta", default-features = false, features = [] }
+
+[build-dependencies]
+tonic-prost-build = "0.14"
