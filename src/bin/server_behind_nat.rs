@@ -42,7 +42,8 @@ fn make_msquic_async_listner(
                 .set_PeerBidiStreamCount(100)
                 .set_PeerUnidiStreamCount(100)
                 .set_DatagramReceiveEnabled()
-                .set_StreamMultiReceiveEnabled(),
+                .set_StreamMultiReceiveEnabled()
+                .set_ServerMigrationEnabled(),
         ),
     )?;
 
@@ -150,10 +151,12 @@ async fn main() -> anyhow::Result<()> {
                 while let Ok(event) = poll_fn(|cx| conn.poll_event(cx)).await {
                     debug!("conn event: {:?}", event);
                 }
+                debug!("connection task ended");
                 anyhow::Ok(())
             });
         }
         set.join_all().await;
+        debug!("all connection tasks ended");
         anyhow::Ok(())
     });
 

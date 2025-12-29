@@ -30,7 +30,8 @@ fn make_msquic_async_reg_and_config()
                 .set_PeerBidiStreamCount(100)
                 .set_PeerUnidiStreamCount(100)
                 .set_DatagramReceiveEnabled()
-                .set_StreamMultiReceiveEnabled(),
+                .set_StreamMultiReceiveEnabled()
+                .set_ServerMigrationEnabled(),
         ),
     )?;
 
@@ -66,6 +67,9 @@ async fn main() -> anyhow::Result<()> {
         let mut set = JoinSet::new();
         while let Some(conn) = conn_receiver.recv().await {
             set.spawn(async move {
+                let local_addr = conn.get_local_addr()?;
+                debug!("local address: {}", local_addr);
+                conn.add_local_addr(local_addr.clone(), local_addr)?;
                 while let Ok(event) = poll_fn(|cx| conn.poll_event(cx)).await {
                     debug!("conn event: {:?}", event);
                 }
