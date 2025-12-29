@@ -7,6 +7,7 @@ use tokio::sync::mpsc;
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
 use tonic_h3::msquic_async::h3_msquic_async::{msquic, msquic_async};
+use tracing::{debug, error, info};
 
 tonic::include_proto!("helloworld");
 
@@ -79,9 +80,45 @@ async fn main() -> anyhow::Result<()> {
 
     let token = CancellationToken::new();
     let addr: SocketAddr = "127.0.0.1:5047".parse()?;
-    let (_registration, listener) = make_msquic_async_listner(Some(addr))?;
+    let (registration, listener) = make_msquic_async_listner(Some(addr))?;
     let listen_addr = listener.local_addr()?;
-    tracing::debug!("listenaddr : {}", listen_addr);
+    debug!("listenaddr : {}", listen_addr);
+
+    let local_bind_addr: SocketAddr = "127.0.0.1:5047".parse()?;
+    let server_addr: SocketAddr = "153.127.33.247:4443".parse()?;
+    let target_addr: Option<SocketAddr> = None;
+
+    let (_handle, mut event_receiver) = h3_masque::client::connect_udp_bind_proxy(
+        &registration,
+        local_bind_addr,
+        server_addr,
+        target_addr,
+    )
+    .await?;
+    let (observed_sender, mut observed_receiver) = mpsc::channel(1);
+    tokio::spawn(async move {
+        while let Some(event) = event_receiver.recv().await {
+            match event {
+                h3_masque::client::BoundProxyEvent::NotifyPublicAddress(public_addr) => {
+                    info!("Received public addresses: {}", public_addr);
+                }
+                h3_masque::client::BoundProxyEvent::NotifyObservedAddress {
+                    local_address,
+                    observed_address,
+                } => {
+                    info!(
+                        "Observed address for local address {} is {}",
+                        local_address, observed_address
+                    );
+                    observed_sender
+                        .send((local_address, observed_address))
+                        .await?;
+                }
+            }
+        }
+        anyhow::Ok(())
+    });
+
     let acceptor = tonic_h3::msquic_async::H3MsQuicAsyncAcceptor::new(listener);
     let (conn_sender, mut conn_receiver) = mpsc::channel(1);
     let acceptor = acceptor.with_channel(conn_sender);
@@ -100,11 +137,18 @@ async fn main() -> anyhow::Result<()> {
             .await
     });
     tokio::spawn(async move {
+        let Some((_local_address, _observed_address)) = observed_receiver.recv().await else {
+            error!("did not receive observed address");
+            return Ok(());
+        };
         let mut set = JoinSet::new();
         while let Some(conn) = conn_receiver.recv().await {
             set.spawn(async move {
+                let unspecified_address = "0.0.0.0:0".parse::<SocketAddr>()?;
+                conn.add_local_addr(unspecified_address.clone(), unspecified_address.clone())?;
+
                 while let Ok(event) = poll_fn(|cx| conn.poll_event(cx)).await {
-                    tracing::debug!("conn event: {:?}", event);
+                    debug!("conn event: {:?}", event);
                 }
                 anyhow::Ok(())
             });
