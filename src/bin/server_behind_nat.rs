@@ -89,7 +89,7 @@ async fn main() -> anyhow::Result<()> {
     let server_addr: SocketAddr = "153.127.33.247:4443".parse()?;
     let target_addr: Option<SocketAddr> = None;
 
-    let (_handle, mut event_receiver) = h3_masque::client::connect_udp_bind_proxy(
+    let (handle_masque, mut event_receiver) = h3_masque::client::connect_udp_bind_proxy(
         &registration,
         local_bind_addr,
         server_addr,
@@ -165,5 +165,6 @@ async fn main() -> anyhow::Result<()> {
         .expect("failed to listen for event");
     token.cancel();
     let _ = handle_svc.await?;
+    handle_masque.abort();
     Ok(())
 }
