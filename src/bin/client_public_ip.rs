@@ -88,6 +88,7 @@ async fn main() -> anyhow::Result<()> {
         let response = client.say_hello(request).await.unwrap();
 
         debug!("RESPONSE={:?}", response);
+        tokio::time::sleep(std::time::Duration::from_secs(10)).await;
     }
     Ok(())
 }
