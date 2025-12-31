@@ -69,7 +69,7 @@ async fn main() -> anyhow::Result<()> {
             set.spawn(async move {
                 let local_addr = conn.get_local_addr()?;
                 debug!("local address: {}", local_addr);
-                conn.add_local_addr(local_addr.clone(), local_addr)?;
+                conn.add_observed_addr(local_addr.clone(), local_addr)?;
                 while let Ok(event) = poll_fn(|cx| conn.poll_event(cx)).await {
                     debug!("conn event: {:?}", event);
                 }

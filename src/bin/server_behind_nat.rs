@@ -146,10 +146,19 @@ async fn main() -> anyhow::Result<()> {
         while let Some(conn) = conn_receiver.recv().await {
             set.spawn(async move {
                 let unspecified_address = "0.0.0.0:0".parse::<SocketAddr>()?;
-                conn.add_local_addr(unspecified_address.clone(), unspecified_address.clone())?;
+                conn.add_local_addr(unspecified_address.clone())?;
 
                 while let Ok(event) = poll_fn(|cx| conn.poll_event(cx)).await {
                     debug!("conn event: {:?}", event);
+                    match event {
+                        msquic_async::ConnectionEvent::PathValidated { local_address, remote_address } => {
+                            if !local_address.ip().is_loopback() {
+                                info!("Activated path: local_address={}, remote_address={}", local_address, remote_address);
+                                conn.activate_path(local_address, remote_address)?;
+                            }
+                        }
+                        _ => {}
+                    }
                 }
                 debug!("connection task ended");
                 anyhow::Ok(())
