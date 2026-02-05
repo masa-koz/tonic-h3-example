@@ -12,7 +12,9 @@ tokio-macros = { version = "0.2.0-alpha.6" }
 tokio-util = "0.7"
 anyhow = "1"
 argh = "0.1.10"
+async-trait = "0.1.89"
 http = "1"
+rand = "0.8"
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3", features = ["fmt", "ansi", "env-filter", "time", "tracing-log"] }
 tempfile = "3.10.1"
