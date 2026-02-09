@@ -1,15 +1,22 @@
 use std::future::poll_fn;
-use std::io::Write;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
+use argh::FromArgs;
 use async_trait::async_trait;
-use tempfile::NamedTempFile;
 use tokio::sync::mpsc;
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
 use tonic_h3::msquic_async::h3_msquic_async::{msquic, msquic_async};
 use tracing::{debug, error, info};
+
+#[derive(FromArgs, Clone)]
+/// server args
+pub struct CmdOptions {
+    /// server address
+    #[argh(option, default = "String::from(\"https://127.0.0.1:4443\")")]
+    server_url: String,
+}
 
 struct UdpProxyClientServiceImpl {
     event_sender: mpsc::Sender<h3_masque::client::UdpProxyClientEvent>,
@@ -156,29 +163,26 @@ async fn main() -> anyhow::Result<()> {
         .with_max_level(tracing::Level::DEBUG)
         .init();
 
+    let cmd_opts: CmdOptions = argh::from_env();
+
     let token = CancellationToken::new();
+
     let addr: SocketAddr = "127.0.0.1:5047".parse()?;
     let (registration, listener) = make_msquic_async_listner(Some(addr))?;
     let listen_addr = listener.local_addr()?;
     debug!("listenaddr : {}", listen_addr);
 
-    let local_bind_addr: SocketAddr = "127.0.0.1:5047".parse()?;
-    let server_addr: SocketAddr = "153.127.33.247:4443".parse()?;
-    let target_addr: Option<SocketAddr> = None;
-
     let (event_sender, mut event_receiver) =
         mpsc::channel::<h3_masque::client::UdpProxyClientEvent>(10);
-    let svc = UdpProxyClientServiceImpl { event_sender };
+    let svc = Arc::new(UdpProxyClientServiceImpl { event_sender });
 
-    let handle_masque = h3_masque::client::connect_udp_bind_proxy(
-        &registration,
-        None,
-        local_bind_addr,
-        server_addr,
-        target_addr,
-        Arc::new(svc),
-    )
-    .await?;
+    let udp_proxy = h3_masque::client::UdpBindProxyClientBuilder::new(&registration, svc)
+        .server_url(&cmd_opts.server_url)
+        .bind_addr("127.0.0.1:5047")
+        .no_cert_validation()
+        .build();
+    let proxy_handle = udp_proxy.connect().await?;
+
     let (observed_sender, mut observed_receiver) = mpsc::channel(1);
     tokio::spawn(async move {
         while let Some(event) = event_receiver.recv().await {
@@ -254,6 +258,6 @@ async fn main() -> anyhow::Result<()> {
         .expect("failed to listen for event");
     token.cancel();
     let _ = handle_svc.await?;
-    handle_masque.abort();
+    proxy_handle.abort();
     Ok(())
 }

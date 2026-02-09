@@ -18,7 +18,7 @@ rand = "0.8"
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3", features = ["fmt", "ansi", "env-filter", "time", "tracing-log"] }
 tempfile = "3.10.1"
-tonic-h3 = { path = "../tonic-h3/tonic-h3" , default-features = false, features = ["msquic-async"] }
-h3-masque = { path = "../h3-masque" }
+tonic-h3 = { git = "https://github.com/masa-koz/tonic-h3", rev = "e4f4d9ee7a814ff65e2ee2dac5866c4b80b0dcf5", default-features = false, features = ["msquic-async"] }
+h3-masque = { git = "https://github.com/masa-koz/h3-masque", rev = "f99b950290a16708c67b668057edf4e24d642221" }
 [build-dependencies]
 tonic-prost-build = "0.14"

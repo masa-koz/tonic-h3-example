@@ -112,6 +112,7 @@ dependencies = [
 [[package]]
 name = "axum-h3"
 version = "0.0.5"
+source = "git+https://github.com/masa-koz/tonic-h3?rev=e4f4d9ee7a814ff65e2ee2dac5866c4b80b0dcf5#e4f4d9ee7a814ff65e2ee2dac5866c4b80b0dcf5"
 dependencies = [
  "axum",
  "futures",
@@ -494,6 +495,7 @@ dependencies = [
 [[package]]
 name = "h3-masque"
 version = "0.1.0"
+source = "git+https://github.com/masa-koz/h3-masque?rev=f99b950290a16708c67b668057edf4e24d642221#f99b950290a16708c67b668057edf4e24d642221"
 dependencies = [
  "anyhow",
  "argh",
@@ -532,6 +534,7 @@ dependencies = [
 [[package]]
 name = "h3-util"
 version = "0.0.5"
+source = "git+https://github.com/masa-koz/tonic-h3?rev=e4f4d9ee7a814ff65e2ee2dac5866c4b80b0dcf5#e4f4d9ee7a814ff65e2ee2dac5866c4b80b0dcf5"
 dependencies = [
  "bytes",
  "futures",
@@ -1479,6 +1482,7 @@ dependencies = [
 [[package]]
 name = "tonic-h3"
 version = "0.0.5"
+source = "git+https://github.com/masa-koz/tonic-h3?rev=e4f4d9ee7a814ff65e2ee2dac5866c4b80b0dcf5#e4f4d9ee7a814ff65e2ee2dac5866c4b80b0dcf5"
 dependencies = [
  "axum-h3",
  "futures",
